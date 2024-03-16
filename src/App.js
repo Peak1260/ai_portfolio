@@ -3,10 +3,10 @@ import './App.css'
 import '@chatscope/chat-ui-kit-styles/dist/default/styles.min.css';
 import { MainContainer, ChatContainer, MessageList, Message, MessageInput, TypingIndicator } from '@chatscope/chat-ui-kit-react';
 
-const API_KEY = "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";
+const API_KEY = "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";
 
-const systemMessage = {
-  "role": "system", "content": "Explain things like you're talking to a computer engineering student with 4 years of experience."
+const systemMessage = { 
+  "role": "system", "content": "Explain things like you're talking to a computer engineering student with 3 years of experience."
 }
 
 function App() {
@@ -27,15 +27,20 @@ function App() {
     };
 
     const newMessages = [...messages, newMessage];
-
+    
     setMessages(newMessages);
 
+    // Initial system message to determine ChatGPT functionality
+    // How it responds, how it talks, etc.
     setIsTyping(true);
     await processMessageToChatGPT(newMessages);
   };
 
-  async function processMessageToChatGPT(chatMessages) {
+  async function processMessageToChatGPT(chatMessages) { // messages is an array of messages
+    // Format messages for chatGPT API
     // API is expecting objects in format of { role: "user" or "assistant", "content": "message here"}
+    // So we need to reformat
+
     let apiMessages = chatMessages.map((messageObject) => {
       let role = "";
       if (messageObject.sender === "ChatGPT") {
@@ -43,45 +48,48 @@ function App() {
       } else {
         role = "user";
       }
-      return { role: role, content: messageObject.message }
+      return { role: role, content: messageObject.message}
     });
 
 
+    // Get the request body set up with the model we plan to use
+    // and the messages which we formatted above. We add a system message in the front to'
+    // determine how we want chatGPT to act. 
     const apiRequestBody = {
-      "model": "gpt-4",
+      "model": "gpt-4-0125-preview",
       "messages": [
         systemMessage,  // The system message DEFINES the logic of our chatGPT
         ...apiMessages // The messages from our chat with ChatGPT
       ]
     }
 
-    await fetch("https://api.openai.com/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          "Authorization": "Bearer " + API_KEY,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(apiRequestBody)
-      }).then((data) => {
-        return data.json();
-      }).then((data) => {
-        console.log(data);
-        setMessages([...chatMessages, {
-          message: data.choices[0].message.content,
-          sender: "ChatGPT"
-        }]);
-        setIsTyping(false);
-      });
+    await fetch("https://api.openai.com/v1/chat/completions", 
+    {
+      method: "POST",
+      headers: {
+        "Authorization": "Bearer " + API_KEY,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(apiRequestBody)
+    }).then((data) => {
+      return data.json();
+    }).then((data) => {
+      console.log(data);
+      setMessages([...chatMessages, {
+        message: data.choices[0].message.content,
+        sender: "ChatGPT"
+      }]);
+      setIsTyping(false);
+    });
   }
 
   return (
     <div className="App">
-      <div style={{ position: "relative", height: "100%", width: "100%" }}>
+      <div style={{ position:"relative", height: "100%", width: "100%"  }}>
         <MainContainer>
-          <ChatContainer>
-            <MessageList
-              scrollBehavior="smooth"
+          <ChatContainer>       
+            <MessageList 
+              scrollBehavior="smooth" 
               typingIndicator={isTyping ? <TypingIndicator content="ChatGPT is typing" /> : null}
             >
               {messages.map((message, i) => {
@@ -89,7 +97,7 @@ function App() {
                 return <Message key={i} model={message} />
               })}
             </MessageList>
-            <MessageInput placeholder="Type message here" onSend={handleSend} />
+            <MessageInput placeholder="Type message here" onSend={handleSend} />        
           </ChatContainer>
         </MainContainer>
       </div>
